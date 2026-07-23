@@ -44,6 +44,7 @@ import type {
 import type { GitHubWorkItem } from '../../../../shared/types'
 import ProjectPicker, { type ResolvedProjectSelection } from './ProjectPicker'
 import ProjectViewList from './ProjectViewList'
+import ProjectBoardView from './ProjectBoardView'
 import ProjectItemSlugDialog from './ProjectItemSlugDialog'
 import {
   filterProjectTableRowsBySelectedRepos,
@@ -946,6 +947,8 @@ export default function ProjectViewWrapper({ selectedRepoIds }: Props): React.JS
           }}
           onClose={() => setDialogRepoItem(null)}
         />
+      ) : visibleTable && visibleTable.selectedView.layout === 'BOARD_LAYOUT' ? (
+        <ProjectBoardView table={visibleTable} onOpenDialog={handleOpenDialog} />
       ) : visibleTable ? (
         <ProjectViewList
           table={visibleTable}
@@ -1169,11 +1172,11 @@ function ViewTabStrip({
   activeViewId: string | null
   onPick: (viewId: string) => void
 }): React.JSX.Element {
-  // Why: emulate GitHub Projects' tab strip; non-table layouts stay visible but disabled.
+  // Why: emulate GitHub Projects' tab strip; unsupported layouts (roadmap) stay visible but disabled.
   return (
     <div className="project-view-tab-strip flex min-h-[41px] min-w-0 flex-none items-end gap-1 overflow-x-auto overflow-y-hidden border-b border-border/50 bg-muted/20 px-3 pt-3">
       {views.map((v) => {
-        const supported = v.layout === 'TABLE_LAYOUT'
+        const supported = v.layout === 'TABLE_LAYOUT' || v.layout === 'BOARD_LAYOUT'
         const active = v.id === activeViewId
         const layoutLabel =
           v.layout === 'BOARD_LAYOUT'
@@ -1297,7 +1300,7 @@ function ErrorState({
     error.type === 'too_large'
       ? `This view has ${totalCount ?? 'many'} items — too large to render in Orca. Narrow the view's filter on GitHub.`
       : error.type === 'unsupported_layout'
-        ? 'Orca only renders table views yet. This is a Board or Roadmap view.'
+        ? 'Orca renders Table and Board views. This is a Roadmap view.'
         : error.type === 'not_found'
           ? 'Could not find this project or view.'
           : error.type === 'schema_drift'

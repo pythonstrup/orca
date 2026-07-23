@@ -625,6 +625,7 @@ type RawProjectView = {
     nodes?: (RawProjectV2Field | null)[]
   }
   groupByFields?: { nodes?: (RawProjectV2Field | null)[] }
+  verticalGroupByFields?: { nodes?: (RawProjectV2Field | null)[] }
   sortByFields?: {
     nodes?: ({ direction?: string; field?: RawProjectV2Field | null } | null)[]
   }
@@ -667,6 +668,7 @@ async function fetchProjectViewsPage(args: {
                 nodes { ...FieldConfig }
               }
               groupByFields(first:10) { nodes { ...FieldConfig } }
+              verticalGroupByFields(first:10) { nodes { ...FieldConfig } }
               sortByFields(first:10) {
                 nodes { direction field { ...FieldConfig } }
               }
@@ -777,6 +779,13 @@ function finalizeView(
       groupByFields.push(n)
     }
   }
+  const verticalGroupByFields: GitHubProjectField[] = []
+  for (const f of raw.verticalGroupByFields?.nodes ?? []) {
+    const n = normalizeField(f)
+    if (n) {
+      verticalGroupByFields.push(n)
+    }
+  }
   const sortByFields: GitHubProjectSort[] = []
   for (const s of raw.sortByFields?.nodes ?? []) {
     if (!s || (s.direction !== 'ASC' && s.direction !== 'DESC')) {
@@ -798,6 +807,7 @@ function finalizeView(
       filter: typeof raw.filter === 'string' ? raw.filter : '',
       fields,
       groupByFields,
+      verticalGroupByFields,
       sortByFields
     }
   }
@@ -1287,7 +1297,8 @@ export async function getProjectViewTable(
     typeof args.queryOverride === 'string' ? args.queryOverride : selectedView.filter
 
   // Unsupported layout: skip item pagination; best-effort count-only query.
-  if (selectedView.layout !== 'TABLE_LAYOUT') {
+  // Board views share the table item pipeline — columns are derived in the renderer.
+  if (selectedView.layout !== 'TABLE_LAYOUT' && selectedView.layout !== 'BOARD_LAYOUT') {
     const count = await fetchItemsCountOnly({
       owner: args.owner,
       ownerType: args.ownerType,
@@ -1299,7 +1310,7 @@ export async function getProjectViewTable(
       ok: false,
       error: {
         type: 'unsupported_layout',
-        message: `Orca only renders table views. This is a ${selectedView.layout.replace('_LAYOUT', '').toLowerCase()} view.`
+        message: `Orca renders table and board views. This is a ${selectedView.layout.replace('_LAYOUT', '').toLowerCase()} view.`
       },
       ...(typeof count === 'number' ? { totalCount: count } : {})
     }

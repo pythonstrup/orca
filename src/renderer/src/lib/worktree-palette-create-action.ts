@@ -32,25 +32,13 @@ type WorktreePaletteSelectionCandidateEntry = {
   type: string
 }
 
-type WorktreePaletteSelectableEntryType =
-  | 'worktree'
-  | 'create-worktree'
-  | 'settings'
-  | 'quick-action'
-  | 'browser-page'
-
+// Why: every rendered row is a CommandItem except section headers and hint rows,
+// so exclude those two instead of allowlisting item types — an allowlist drifted
+// once already (workspace/simulator tabs were unreachable by arrow keys).
 export function isSelectableWorktreePaletteEntry(
   entry: WorktreePaletteSelectionCandidateEntry
-): entry is WorktreePaletteSelectionCandidateEntry & {
-  type: WorktreePaletteSelectableEntryType
-} {
-  return (
-    entry.type === 'worktree' ||
-    entry.type === 'create-worktree' ||
-    entry.type === 'settings' ||
-    entry.type === 'quick-action' ||
-    entry.type === 'browser-page'
-  )
+): boolean {
+  return entry.type !== 'section-header' && entry.type !== 'hint'
 }
 
 export function getWorktreePaletteSelectionItemIds<

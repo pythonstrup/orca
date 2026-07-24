@@ -405,6 +405,15 @@ export type EditorSlice = {
   editorViewMode: Record<string, EditorViewMode>
   setEditorViewMode: (fileId: string, mode: EditorViewMode) => void
 
+  // Advances the diff review to the adjacent changed file (returns true if it
+  // moved). Registered by the Source Control panel, which owns the visible,
+  // ordered file list; null when that panel is unmounted, so F7/Shift+F7 fall
+  // back to same-file change wrap.
+  changedFileDiffNavigator: ((direction: 'next' | 'previous') => boolean) | null
+  setChangedFileDiffNavigator: (
+    navigator: ((direction: 'next' | 'previous') => boolean) | null
+  ) => void
+
   // Per-file opt-in to render markdown-preview front matter (#4468); absent = default.
   markdownFrontmatterVisible: Record<string, boolean>
   setMarkdownFrontmatterVisible: (fileId: string, visible: boolean) => void
@@ -1407,6 +1416,9 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
       }
       return { editorViewMode: { ...s.editorViewMode, [fileId]: mode } }
     }),
+
+  changedFileDiffNavigator: null,
+  setChangedFileDiffNavigator: (navigator) => set({ changedFileDiffNavigator: navigator }),
 
   // Markdown preview front-matter visibility (#4468).
   markdownFrontmatterVisible: {},

@@ -4511,6 +4511,41 @@ function SourceControlInner(): React.JSX.Element {
     clearSelection()
   }, [sourceControlViewMode, clearSelection])
 
+  // Bridge the editor's F7/Shift+F7 diff-change nav across file edges: when the
+  // cursor is at the file's last/first change, advance to the adjacent changed
+  // file honoring exactly the order/filtering shown in this panel. Reads latest
+  // values via refs so the registration stays stable and doesn't churn.
+  const setChangedFileDiffNavigator = useAppStore((s) => s.setChangedFileDiffNavigator)
+  const visibleSelectionEntriesRef = useRef(visibleSelectionEntries)
+  visibleSelectionEntriesRef.current = visibleSelectionEntries
+  const activeOpenRowKeysRef = useRef(activeOpenRowKeys)
+  activeOpenRowKeysRef.current = activeOpenRowKeys
+  const handleOpenDiffRef = useRef(handleOpenDiff)
+  handleOpenDiffRef.current = handleOpenDiff
+  useEffect(() => {
+    const navigate = (direction: 'next' | 'previous'): boolean => {
+      const entries = visibleSelectionEntriesRef.current
+      const activeKeys = activeOpenRowKeysRef.current
+      const currentIndex = entries.findIndex((entry) => activeKeys.has(entry.key))
+      if (currentIndex === -1) {
+        return false
+      }
+      const nextEntry = entries[direction === 'next' ? currentIndex + 1 : currentIndex - 1]
+      if (!nextEntry) {
+        return false
+      }
+      handleOpenDiffRef.current(nextEntry.entry)
+      return true
+    }
+    setChangedFileDiffNavigator(navigate)
+    return () => {
+      // Identity guard: a late unmount must not wipe a newer panel's registration.
+      if (useAppStore.getState().changedFileDiffNavigator === navigate) {
+        setChangedFileDiffNavigator(null)
+      }
+    }
+  }, [setChangedFileDiffNavigator])
+
   const handleToggleSourceControlViewMode = useCallback(() => {
     if (!settings) {
       return

@@ -4513,34 +4513,31 @@ function SourceControlInner(): React.JSX.Element {
 
   // Bridge the editor's F7/Shift+F7 diff-change nav across file edges: when the
   // cursor is at the file's last/first change, advance to the adjacent changed
-  // file honoring exactly the order/filtering shown in this panel. Reads latest
-  // values via refs so the registration stays stable and doesn't churn.
+  // file honoring exactly the order/filtering shown in this panel. useEffectEvent
+  // keeps the registered function stable while reading only committed values.
   const setChangedFileDiffNavigator = useAppStore((s) => s.setChangedFileDiffNavigator)
-  const visibleSelectionEntriesRef = useRef(visibleSelectionEntries)
-  visibleSelectionEntriesRef.current = visibleSelectionEntries
-  const activeOpenRowKeysRef = useRef(activeOpenRowKeys)
-  activeOpenRowKeysRef.current = activeOpenRowKeys
-  const handleOpenDiffRef = useRef(handleOpenDiff)
-  handleOpenDiffRef.current = handleOpenDiff
-  useEffect(() => {
-    const navigate = (direction: 'next' | 'previous'): boolean => {
-      const entries = visibleSelectionEntriesRef.current
-      const activeKeys = activeOpenRowKeysRef.current
-      const currentIndex = entries.findIndex((entry) => activeKeys.has(entry.key))
+  const navigateToAdjacentChangedFile = useEffectEvent(
+    (direction: 'next' | 'previous'): boolean => {
+      const currentIndex = visibleSelectionEntries.findIndex((entry) =>
+        activeOpenRowKeys.has(entry.key)
+      )
       if (currentIndex === -1) {
         return false
       }
-      const nextEntry = entries[direction === 'next' ? currentIndex + 1 : currentIndex - 1]
-      if (!nextEntry) {
+      const adjacent =
+        visibleSelectionEntries[direction === 'next' ? currentIndex + 1 : currentIndex - 1]
+      if (!adjacent) {
         return false
       }
-      handleOpenDiffRef.current(nextEntry.entry)
+      handleOpenDiff(adjacent.entry)
       return true
     }
-    setChangedFileDiffNavigator(navigate)
+  )
+  useEffect(() => {
+    setChangedFileDiffNavigator(navigateToAdjacentChangedFile)
     return () => {
       // Identity guard: a late unmount must not wipe a newer panel's registration.
-      if (useAppStore.getState().changedFileDiffNavigator === navigate) {
+      if (useAppStore.getState().changedFileDiffNavigator === navigateToAdjacentChangedFile) {
         setChangedFileDiffNavigator(null)
       }
     }

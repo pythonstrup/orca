@@ -56,7 +56,8 @@ import {
   createWorktreePaletteRequestGuard,
   getNextWorktreePaletteSelection,
   getWorktreePaletteSelectionItemIds,
-  getWorktreePaletteCreateActionState
+  getWorktreePaletteCreateActionState,
+  type NON_SELECTABLE_WORKTREE_PALETTE_ENTRY_TYPES
 } from '@/lib/worktree-palette-create-action'
 import { getWorkspacePortsByWorktreeId } from '@/lib/workspace-port-groups'
 import {
@@ -200,6 +201,26 @@ type PaletteItem =
   | WorkspaceTabPaletteItem
 
 type PaletteListEntry = PaletteItem | CreateWorktreePaletteItem | SectionHeader | HintRow
+
+// Why: the arrow-key selectable set is derived by excluding these types, so a new
+// plain-div row type must be added there too or it becomes highlightable but
+// unfocusable. Fails the build in both directions if the two lists drift apart.
+type NonSelectablePaletteEntryType = Exclude<
+  PaletteListEntry,
+  PaletteItem | CreateWorktreePaletteItem
+>['type']
+type _UnlistedNonSelectableType = Exclude<
+  NonSelectablePaletteEntryType,
+  (typeof NON_SELECTABLE_WORKTREE_PALETTE_ENTRY_TYPES)[number]
+>
+type _ListedSelectableType = Exclude<
+  (typeof NON_SELECTABLE_WORKTREE_PALETTE_ENTRY_TYPES)[number],
+  NonSelectablePaletteEntryType
+>
+const _exhaustive: [_UnlistedNonSelectableType | _ListedSelectableType] extends [never]
+  ? true
+  : never = true
+void _exhaustive
 
 const CREATE_WORKSPACE_QUICK_ACTION_ITEM_ID = `quick-action:${CREATE_WORKSPACE_QUICK_ACTION_ID}`
 

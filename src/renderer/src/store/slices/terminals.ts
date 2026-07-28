@@ -2090,7 +2090,9 @@ export const createTerminalSlice: StateCreator<AppState, [], [], TerminalSlice> 
       return
     }
     const generatedTitle = deriveGeneratedTabTitle(prompt)
-    if (!generatedTitle || existingGeneratedTitle === generatedTitle) {
+    // Why: a new session whose first prompt derives the same text still has to re-stamp
+    // the owner, or every later turn keeps reading as stale and retitles the tab.
+    if (!generatedTitle || (existingGeneratedTitle === generatedTitle && !namesEndedSession)) {
       return
     }
     set((s) => {
@@ -2112,9 +2114,8 @@ export const createTerminalSlice: StateCreator<AppState, [], [], TerminalSlice> 
       const latestGeneratedTitle = tabForWrite.generatedTitle?.trim()
       if (
         latestGeneratedTitle &&
-        (latestGeneratedTitle === generatedTitle ||
-          (!generatedTitleNamesEndedSession(tabForWrite, options?.sessionId) &&
-            options?.replaceExistingGeneratedTitle !== true))
+        !generatedTitleNamesEndedSession(tabForWrite, options?.sessionId) &&
+        (latestGeneratedTitle === generatedTitle || options?.replaceExistingGeneratedTitle !== true)
       ) {
         return s
       }

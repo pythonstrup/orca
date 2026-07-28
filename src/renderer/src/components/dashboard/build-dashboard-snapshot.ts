@@ -102,7 +102,8 @@ function boundedLabelOrUndefined(value: string | undefined): string | undefined 
  *  same agent with the same name. */
 function rowConversationName(
   row: DashboardAgentRow,
-  generatedTitlesEnabled: boolean
+  generatedTitlesEnabled: boolean,
+  tabHasSplitPanes: boolean
 ): string | undefined {
   const parentPaneKey = row.entry.orchestration?.parentPaneKey
   // Why: a child row rendered on its parent's tab does not own that tab's name.
@@ -114,12 +115,8 @@ function rowConversationName(
     return undefined
   }
   return (
-    getAgentRowConversationName(
-      row.tab,
-      row.agentType,
-      generatedTitlesEnabled,
-      row.entry.terminalTitle
-    ) ?? undefined
+    getAgentRowConversationName(row.tab, row.agentType, generatedTitlesEnabled, tabHasSplitPanes) ??
+    undefined
   )
 }
 
@@ -326,7 +323,13 @@ export function buildDashboardSnapshot(
           !isTitleDerived &&
           (state.acknowledgedAgentsByPaneKey?.[row.paneKey] ?? 0) < row.entry.stateStartedAt,
         askSummary: bucket === 'attention' ? (row.entry.interactivePrompt ?? undefined) : undefined,
-        conversationName: boundedLabelOrUndefined(rowConversationName(row, generatedTitlesEnabled)),
+        conversationName: boundedLabelOrUndefined(
+          rowConversationName(
+            row,
+            generatedTitlesEnabled,
+            state.terminalLayoutsByTabId?.[tabId]?.root?.type === 'split'
+          )
+        ),
         ...(terminalInput ? { terminalInput } : {})
       })
     }

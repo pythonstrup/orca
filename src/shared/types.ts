@@ -879,6 +879,9 @@ export type TerminalTab = {
   defaultTitle?: string
   /** Stable opt-in label derived from the first known agent prompt. */
   generatedTitle?: string | null
+  /** Provider session that produced `generatedTitle`. A different live session
+   *  (`/clear`, resume) means the title names a conversation that is over. */
+  generatedTitleSessionId?: string | null
   /** Stable label from the tab-bar Quick Command that created this terminal. */
   quickCommandLabel?: string | null
   customTitle: string | null

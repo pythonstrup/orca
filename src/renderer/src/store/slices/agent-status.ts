@@ -2061,6 +2061,9 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
         )
         const shouldReplaceGeneratedTitle =
           hasMatchingOrchestrationLabels || isNewDispatchAgainstStickyOrchestration
+        // Why: identifies which session owns the title, so a later `/clear` (new session
+        // id, same pane) can retire it instead of labeling the new conversation.
+        const titleSessionId = entryForGeneratedTitle.providerSession?.id
         // Why: setAgentStatus is high-frequency, so only parse dispatch preambles when a title write is actually possible.
         const mayWriteGeneratedTitle =
           get().settings?.tabAutoGenerateTitle === true &&
@@ -2074,13 +2077,11 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
           liveIsDispatchPrompt && mayWriteGeneratedTitle
             ? getAgentRowGeneratedTitleText(entryForGeneratedTitle)
             : entryForGeneratedTitle.prompt
-        if (shouldReplaceGeneratedTitle) {
-          get().setGeneratedTabTitleFromAgentPrompt(paneKey, generatedTitlePrompt, {
-            replaceExistingGeneratedTitle: true
-          })
-        } else {
-          get().setGeneratedTabTitleFromAgentPrompt(paneKey, generatedTitlePrompt)
-        }
+        // Why: setAgentStatus is high-frequency — one flat literal, not conditional spreads.
+        get().setGeneratedTabTitleFromAgentPrompt(paneKey, generatedTitlePrompt, {
+          replaceExistingGeneratedTitle: shouldReplaceGeneratedTitle,
+          sessionId: titleSessionId
+        })
       }
       // Why: schedule via queueMicrotask after set so the timer reads the updated map without re-entering the store during set.
       queueMicrotask(() => freshness.schedule())

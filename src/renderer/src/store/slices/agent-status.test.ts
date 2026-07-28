@@ -600,7 +600,15 @@ describe('agent status tool + assistant fields', () => {
     expect(entry.lastAssistantMessage).toBeUndefined()
     expect(store.getState().agentStatusEpoch).toBe(firstEpoch)
     expect(setGeneratedTabTitleFromAgentPrompt).toHaveBeenCalledTimes(1)
-    expect(setGeneratedTabTitleFromAgentPrompt).toHaveBeenLastCalledWith('tab-1:1', 'parent codex')
+    // No orchestration replace, and this payload carried no provider session.
+    expect(setGeneratedTabTitleFromAgentPrompt).toHaveBeenLastCalledWith(
+      'tab-1:1',
+      'parent codex',
+      {
+        replaceExistingGeneratedTitle: false,
+        sessionId: undefined
+      }
+    )
   })
 
   it('allows pane agentType to change after the prior turn is done', () => {

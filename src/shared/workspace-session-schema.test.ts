@@ -235,6 +235,7 @@ describe('parseWorkspaceSession', () => {
             title: 'Claude working',
             defaultTitle: 'Terminal 1',
             generatedTitle: 'Refactor auth',
+            generatedTitleSessionId: 'session-a',
             customTitle: null,
             color: null,
             sortOrder: 0,
@@ -265,6 +266,8 @@ describe('parseWorkspaceSession', () => {
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.value.tabsByWorktree.wt[0].generatedTitle).toBe('Refactor auth')
+      // Why: dropped here, a restored title could never be retired by a later `/clear`.
+      expect(result.value.tabsByWorktree.wt[0].generatedTitleSessionId).toBe('session-a')
       expect(result.value.unifiedTabs?.wt[0].generatedLabel).toBe('Refactor auth')
     }
   })

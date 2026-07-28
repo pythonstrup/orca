@@ -28,7 +28,10 @@ import {
   parseWorkspaceKey,
   worktreeWorkspaceKey
 } from '../../../../shared/workspace-scope'
-import { deriveGeneratedTabTitle } from '../../../../shared/agent-tab-title'
+import {
+  deriveGeneratedTabTitle,
+  generatedTitleNamesEndedSession
+} from '../../../../shared/agent-tab-title'
 import { isDecorativeAgentTitleFrameChange } from '../../../../shared/agent-decorative-title-signature'
 import {
   isTerminalLeafId,
@@ -685,7 +688,7 @@ export type TerminalSlice = {
   setGeneratedTabTitleFromAgentPrompt: (
     paneKey: string,
     prompt: string,
-    options?: { replaceExistingGeneratedTitle?: boolean }
+    options?: { replaceExistingGeneratedTitle?: boolean; sessionId?: string }
   ) => void
   clearTabLaunchAgent: (tabId: string) => void
   setRuntimePaneTitle: (tabId: string, paneId: number, title: string) => void
@@ -2076,7 +2079,14 @@ export const createTerminalSlice: StateCreator<AppState, [], [], TerminalSlice> 
       return
     }
     const existingGeneratedTitle = currentTab.generatedTitle?.trim()
-    if (existingGeneratedTitle && options?.replaceExistingGeneratedTitle !== true) {
+    // Why: the title names the session that produced it; once that session is gone
+    // (`/clear`, resume) it labels a finished conversation and must not outrank the new one.
+    const namesEndedSession = generatedTitleNamesEndedSession(currentTab, options?.sessionId)
+    if (
+      existingGeneratedTitle &&
+      !namesEndedSession &&
+      options?.replaceExistingGeneratedTitle !== true
+    ) {
       return
     }
     const generatedTitle = deriveGeneratedTabTitle(prompt)
@@ -2102,12 +2112,22 @@ export const createTerminalSlice: StateCreator<AppState, [], [], TerminalSlice> 
       const latestGeneratedTitle = tabForWrite.generatedTitle?.trim()
       if (
         latestGeneratedTitle &&
-        (latestGeneratedTitle === generatedTitle || options?.replaceExistingGeneratedTitle !== true)
+        (latestGeneratedTitle === generatedTitle ||
+          (!generatedTitleNamesEndedSession(tabForWrite, options?.sessionId) &&
+            options?.replaceExistingGeneratedTitle !== true))
       ) {
         return s
       }
       const ownerTabs = ownerTabsForWrite.map((tab) =>
-        tab.id === tabId ? { ...tab, generatedTitle } : tab
+        // Why: keep the known owner when this ping carried no session id — overwriting it
+        // with null would permanently disable staleness detection for the tab.
+        tab.id === tabId
+          ? {
+              ...tab,
+              generatedTitle,
+              generatedTitleSessionId: options?.sessionId ?? tab.generatedTitleSessionId ?? null
+            }
+          : tab
       )
       const currentUnifiedTabs = s.unifiedTabsByWorktree[ownerWorktreeId] ?? []
       const unifiedTabsWithGeneratedLabel = updateUnifiedTerminalGeneratedLabel(

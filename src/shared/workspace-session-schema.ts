@@ -72,6 +72,9 @@ const terminalTabSchema = z.object({
   title: z.string(),
   defaultTitle: z.string().optional(),
   generatedTitle: z.string().nullable().optional(),
+  // Why: without the owning session id a restored title can't be proven stale, so a
+  // pre-restart `/clear` would keep labeling the tab with the finished conversation.
+  generatedTitleSessionId: z.string().nullable().optional(),
   quickCommandLabel: z.string().nullable().optional(),
   customTitle: z.string().nullable(),
   color: z.string().nullable(),

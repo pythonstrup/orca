@@ -67,6 +67,7 @@ const DROID_SESSIONS_DIR = join(homedir(), '.factory', 'sessions')
 const DROID_PROJECTS_DIR = join(homedir(), '.factory', 'projects')
 const CLINE_SESSIONS_DIR =
   process.env.CLINE_SESSION_DATA_DIR?.trim() || join(homedir(), '.cline', 'data', 'sessions')
+const QWEN_PROJECTS_DIR = join(homedir(), '.qwen', 'projects')
 
 /** Shared discovery rules constrain which paths the delete validator accepts. */
 export type AiVaultAgentSource = {
@@ -299,6 +300,18 @@ export const AI_VAULT_AGENT_SOURCES: AiVaultAgentSourceTable = {
     extensions: ['.jsonl'],
     // Exclude log, SQLite and materialized-projection sidecars.
     filePredicate: (filePath) => basename(filePath) === 'session.jsonl'
+  },
+  'qwen-code': {
+    rootDirs: (options, wslHomeDirs) =>
+      sessionRootDirs(options.qwenProjectsDir ?? QWEN_PROJECTS_DIR, wslHomeDirs, [
+        '.qwen',
+        'projects'
+      ]),
+    extensions: ['.jsonl'],
+    directoryPredicate: (name) => name !== SUBAGENT_DIR_NAME,
+    // Why: resumable sessions live at <project>/chats/<id>.jsonl; ignore
+    // anything outside a chats/ dir. Same segment convention as cursor.
+    filePredicate: (filePath) => pathSegments(filePath).includes('chats')
   }
 }
 

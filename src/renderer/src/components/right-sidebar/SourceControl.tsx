@@ -4518,6 +4518,9 @@ function SourceControlInner(): React.JSX.Element {
   const setChangedFileDiffNavigator = useAppStore((s) => s.setChangedFileDiffNavigator)
   const navigateToAdjacentChangedFile = useEffectEvent(
     (direction: 'next' | 'previous'): boolean => {
+      // Why: activeOpenRowKeys may hold both unstaged:: and untracked:: keys for
+      // one path, but git makes those row kinds mutually exclusive per path, so
+      // first match is the only match.
       const currentIndex = visibleSelectionEntries.findIndex((entry) =>
         activeOpenRowKeys.has(entry.key)
       )

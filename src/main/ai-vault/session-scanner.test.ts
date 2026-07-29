@@ -7,7 +7,8 @@ import { scanAiVaultSessions } from './session-scanner'
 import {
   isolatedScanRoots,
   jsonLines,
-  writeAntigravityScannerFixture
+  writeAntigravityScannerFixture,
+  writeQwenScannerFixture
 } from './session-scanner-test-fixtures'
 
 let tempRoots: string[] = []
@@ -728,6 +729,8 @@ describe('scanAiVaultSessions', () => {
       ])
     )
 
+    await writeQwenScannerFixture(roots.qwenProjectsDir)
+
     const result = await scanAiVaultSessions({ ...roots, platform: 'darwin', limit: 20 })
 
     expect(result.issues).toEqual([])
@@ -771,6 +774,7 @@ describe('scanAiVaultSessions', () => {
     expect(commandByAgent.get('kimi')).toBe(
       "cd '/tmp/kimi' && kimi --session 'session_kimi-session'"
     )
+    expect(commandByAgent.get('qwen-code')).toBe("cd '/tmp/qwen' && qwen --resume 'qwen-session'")
 
     const ompSession = result.sessions.find((session) => session.agent === 'omp')
     expect(ompSession?.model).toBe('gpt-5.4-mini')

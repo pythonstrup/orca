@@ -167,6 +167,9 @@ function buildAgentResumeInvocation(
     case 'devin':
     case 'openclaw':
     case 'droid':
+    // Why: Qwen Code (a Gemini CLI fork) resumes with `qwen --resume <id>` (-r).
+    // falls through
+    case 'qwen-code':
     // Why: OMP resumes by absolute transcript path (see buildAiVaultResumeCommand),
     // but the `--resume <arg>` invocation form is identical to the others here.
     // falls through

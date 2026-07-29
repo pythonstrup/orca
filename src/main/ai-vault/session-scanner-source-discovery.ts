@@ -6,6 +6,7 @@ import { SUBAGENT_DIR_NAME } from './session-scanner-subagent-transcripts'
 import { discoverFiles, discoverOpenClawFiles } from './session-scanner-discovery'
 import { droidDiscoveries, kimiDiscoveries } from './session-scanner-droid-kimi-sources'
 import { opencodeDiscoveries } from './session-scanner-opencode-sources'
+import { qwenDiscoveries } from './session-scanner-qwen-sources'
 import type { AiVaultScanOptions, SessionFileDiscovery } from './session-scanner-types'
 import { normalizeAgentSessionsDir } from './session-scanner-values'
 import { resolveGrokSessionsDir } from '../../shared/grok-session-paths'
@@ -138,6 +139,7 @@ function standardDiscoveries(
       discoverFiles({ rootDir, limit, agent: 'copilot', issues, extensions: ['.jsonl'] })
     ),
     ...cursorDiscoveries(options, wslHomeDirs, limit, issues),
+    ...qwenDiscoveries(options, wslHomeDirs, limit, issues),
     ...grokDiscoveries(options, wslHomeDirs, limit, issues),
     ...devinDiscoveries(options, wslHomeDirs, limit, issues),
     ...hermesDiscoveries(options, wslHomeDirs, limit, issues),

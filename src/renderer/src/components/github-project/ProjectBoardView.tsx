@@ -33,7 +33,8 @@ export default function ProjectBoardView({ table, onOpenDialog }: Props): React.
       </div>
     )
   }
-  if (table.rows.length === 0) {
+  // Single-select boards keep their option columns even with zero matching rows.
+  if (columns.length === 0) {
     return (
       <div className="flex min-h-[120px] flex-1 items-center justify-center p-6 text-sm text-muted-foreground">
         {translate(
@@ -130,7 +131,7 @@ function BoardCard({
             {row.content.repository}
           </span>
         ) : null}
-        {row.content.number != null ? (
+        {row.itemType !== 'REDACTED' && row.content.number != null ? (
           <span className="shrink-0 text-[11px] text-muted-foreground">#{row.content.number}</span>
         ) : null}
       </div>

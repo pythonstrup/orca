@@ -154,6 +154,16 @@ describe('buildBoardColumns', () => {
     expect(columns.map((c) => c.rows.length)).toEqual([0, 0, 1])
   })
 
+  it('keeps option columns with zero rows but yields none for a non-option field', () => {
+    // ProjectBoardView shows its empty state only when this is empty.
+    expect(buildBoardColumns(statusField, []).map((c) => c.label)).toEqual([
+      'Todo',
+      'Doing',
+      'Done'
+    ])
+    expect(buildBoardColumns(assigneesField, [])).toEqual([])
+  })
+
   it('buckets valueless rows into a trailing "No <field>" column only when present', () => {
     const withMissing = buildBoardColumns(statusField, [
       makeRow('r1', { F_status: statusValue('opt_todo', 'Todo') }),

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { detectLanguage } from '@/lib/language-detect'
 import { joinPath } from '@/lib/path'
 import { useAppStore } from '@/store'
@@ -156,19 +156,20 @@ export function useSourceControlRowOpening({
     [activeWorktreeId, branchSummary, openBranchDiff, resolveSplitTargetGroupId, worktreePath]
   )
 
-  // Bridge the editor's F7/Shift+F7 diff-change nav across file edges: when the
-  // cursor is at the file's last/first change, advance to the adjacent changed
-  // file honoring exactly the order/filtering shown in this panel. Reads latest
-  // values via refs so the registration stays stable and doesn't churn — not
-  // useEffectEvent, whose contract forbids calling it outside an Effect, and the
-  // store hands this function to a keyboard handler.
+  // Bridge the editor's F7/Shift+F7 diff-change nav across file edges: at the
+  // file's last/first change, advance to the adjacent file in this panel's
+  // order. Refs keep the registration stable (useEffectEvent can't be handed
+  // to a keyboard handler); synced in a layout effect so a discarded render
+  // never publishes uncommitted entries to the navigator.
   const setChangedFileDiffNavigator = useAppStore((s) => s.setChangedFileDiffNavigator)
   const visibleSelectionEntriesRef = useRef(visibleSelectionEntries)
-  visibleSelectionEntriesRef.current = visibleSelectionEntries
   const activeOpenRowKeysRef = useRef(activeOpenRowKeys)
-  activeOpenRowKeysRef.current = activeOpenRowKeys
   const handleOpenDiffRef = useRef(handleOpenDiff)
-  handleOpenDiffRef.current = handleOpenDiff
+  useLayoutEffect(() => {
+    visibleSelectionEntriesRef.current = visibleSelectionEntries
+    activeOpenRowKeysRef.current = activeOpenRowKeys
+    handleOpenDiffRef.current = handleOpenDiff
+  })
   useEffect(() => {
     const navigate = (direction: 'next' | 'previous'): boolean => {
       const entries = visibleSelectionEntriesRef.current

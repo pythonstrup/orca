@@ -33,11 +33,9 @@ export async function parseQwenSessionFile(
   messages?: TranscriptMessageSink
 ): Promise<AiVaultSession | null> {
   const state = createQwenSessionResumeState(file, messages)
+  const input = openTranscriptReadStream(file.path, { encoding: 'utf-8' }, 'scan')
+  const lines = createInterface({ input, crlfDelay: Infinity })
   try {
-    const lines = createInterface({
-      input: openTranscriptReadStream(file.path, { encoding: 'utf-8' }, 'scan'),
-      crlfDelay: Infinity
-    })
     for await (const line of lines) {
       state.consumeLine(line)
     }
@@ -48,6 +46,11 @@ export async function parseQwenSessionFile(
       throw error
     }
     // Unreadable/empty transcript — still list a metadata-only session.
+  } finally {
+    // readline.close() leaves the underlying stream open; destroy it so a
+    // mid-read failure cannot leak the gated transcript handle.
+    lines.close()
+    input.destroy()
   }
   return state.finalize(platform)
 }

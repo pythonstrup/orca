@@ -62,8 +62,8 @@ async function writeQwenSession(
   const sessionPath = join(chatsDir, `${SESSION_ID}.jsonl`)
   const content = lines !== null ? lines.map((line) => JSON.stringify(line)).join('\n') : ''
   await writeFile(sessionPath, content)
-  const mtimeMs = Date.now()
-  return { file: { path: sessionPath, mtimeMs, modifiedAt: new Date(mtimeMs).toISOString() } }
+  const modifiedAt = '2026-05-01T10:13:00.000Z'
+  return { file: { path: sessionPath, mtimeMs: Date.parse(modifiedAt), modifiedAt } }
 }
 
 describe('parseQwenSessionFile', () => {

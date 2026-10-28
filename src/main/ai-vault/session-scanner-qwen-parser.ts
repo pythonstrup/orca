@@ -1,15 +1,18 @@
 import { openTranscriptReadStream } from '../native-chat/wsl-transcript-fs-access'
 import { WslTranscriptFsError } from '../native-chat/wsl-transcript-fs-gate'
 import { createInterface } from 'node:readline'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 import type { AiVaultSession } from '../../shared/ai-vault-types'
 import {
   accumulatorFoldResumeState,
-  addPreviewMessage,
   createAccumulator,
   sessionIdFromFileName,
   updateLatestLocation,
   updateTimeline
 } from './session-scanner-accumulator'
+import { addSessionText } from './session-scanner-messages'
+import { sessionRootDirs } from './session-scanner-roots'
 import type {
   FileWithMtime,
   ResumableSessionParseState,
@@ -23,6 +26,15 @@ import {
   normalizeTitleText,
   parseJsonObject
 } from './session-scanner-values'
+
+const QWEN_PROJECTS_DIR = join(homedir(), '.qwen', 'projects')
+
+export function qwenProjectsRootDirs(
+  override: string | undefined,
+  wslHomeDirs: readonly string[]
+): string[] {
+  return sessionRootDirs(override ?? QWEN_PROJECTS_DIR, wslHomeDirs, ['.qwen', 'projects'])
+}
 
 // Qwen Code (a Gemini CLI fork) stores one append-only transcript per session at
 // ~/.qwen/projects/<encoded-cwd>/chats/<sessionId>.jsonl. Every record carries
@@ -92,7 +104,7 @@ function consumeQwenSessionLine(accumulator: SessionAccumulator, line: string): 
     }
     accumulator.messageCount++
     accumulator.title ??= normalizeTitleText(text)
-    addPreviewMessage(accumulator, { role: 'user', text, timestamp: record.timestamp })
+    addSessionText(accumulator, { role: 'user', text, timestamp: record.timestamp })
     return
   }
   if (record.type === 'assistant') {
@@ -105,14 +117,14 @@ function consumeQwenSessionLine(accumulator: SessionAccumulator, line: string): 
       return
     }
     accumulator.messageCount++
-    addPreviewMessage(accumulator, { role: 'assistant', text, timestamp: record.timestamp })
+    addSessionText(accumulator, { role: 'assistant', text, timestamp: record.timestamp })
   }
 }
 
 // Joins the `text` of a record's message parts. With excludeThought set, parts
 // flagged `thought: true` (the model's private reasoning) are dropped so titles
 // and previews show only the real reply. Normalization (hidden-block stripping,
-// length caps) happens downstream in normalizeTitleText/addPreviewMessage.
+// length caps) happens downstream in normalizeTitleText/addSessionText.
 function qwenMessagePartsText(parts: unknown[], excludeThought: boolean): string | null {
   const chunks: string[] = []
   for (const item of parts) {

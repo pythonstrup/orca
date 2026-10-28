@@ -74,7 +74,7 @@ function resumableStateFactoryFor(
         ? (messages) => createGeminiJsonlSessionResumeState(candidate.file, messages)
         : null
     case 'qwen-code':
-      return () => createQwenSessionResumeState(candidate.file)
+      return (messages) => createQwenSessionResumeState(candidate.file, messages)
     case 'antigravity':
       return (messages) => createAntigravitySessionResumeState(candidate.file, messages)
     case 'devin':

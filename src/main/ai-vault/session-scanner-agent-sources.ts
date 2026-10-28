@@ -19,6 +19,7 @@ import {
   isKiroSessionMetadataPath,
   kiroTranscriptPathForMetadata
 } from './session-scanner-kiro-parser'
+import { qwenProjectsRootDirs } from './session-scanner-qwen-parser'
 import { OPENCLAW_AGENT_SOURCE } from './openclaw-session-layout'
 import { isOmpConversationDirectory } from './session-scanner-omp-subagent-transcripts'
 import {
@@ -67,7 +68,6 @@ const DROID_SESSIONS_DIR = join(homedir(), '.factory', 'sessions')
 const DROID_PROJECTS_DIR = join(homedir(), '.factory', 'projects')
 const CLINE_SESSIONS_DIR =
   process.env.CLINE_SESSION_DATA_DIR?.trim() || join(homedir(), '.cline', 'data', 'sessions')
-const QWEN_PROJECTS_DIR = join(homedir(), '.qwen', 'projects')
 
 /** Shared discovery rules constrain which paths the delete validator accepts. */
 export type AiVaultAgentSource = {
@@ -302,11 +302,7 @@ export const AI_VAULT_AGENT_SOURCES: AiVaultAgentSourceTable = {
     filePredicate: (filePath) => basename(filePath) === 'session.jsonl'
   },
   'qwen-code': {
-    rootDirs: (options, wslHomeDirs) =>
-      sessionRootDirs(options.qwenProjectsDir ?? QWEN_PROJECTS_DIR, wslHomeDirs, [
-        '.qwen',
-        'projects'
-      ]),
+    rootDirs: (options, wslHomeDirs) => qwenProjectsRootDirs(options.qwenProjectsDir, wslHomeDirs),
     extensions: ['.jsonl'],
     directoryPredicate: (name) => name !== SUBAGENT_DIR_NAME,
     // Why: resumable sessions live at <project>/chats/<id>.jsonl; ignore
